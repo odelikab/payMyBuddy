@@ -32,5 +32,7 @@ public class User {
 	private String email;
 	@NotNull
 	private Integer accountBalance;
+//	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+//	List<User> associateUser = new ArrayList<>();
 
 }

@@ -1,7 +1,8 @@
 package com.openclassrooms.PayMyBuddy.config;
 
-import static org.springframework.security.config.Customizer.withDefaults;
+import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -15,17 +16,27 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+	@Autowired
+	private DataSource dataSource;
+
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.inMemoryAuthentication().withUser("springuser").password(passwordEncoder().encode("spring123"))
-				.roles("USER").and().withUser("springadmin").password(passwordEncoder().encode("admin123"))
-				.roles("ADMIN", "USER");
+		auth.jdbcAuthentication().passwordEncoder(passwordEncoder()).dataSource(dataSource)
+				.usersByUsernameQuery("select username,password,'true' as enabled from user where username=?")
+				.authoritiesByUsernameQuery("select username,password from user where username=?");
+
+//		.inMemoryAuthentication().withUser("springuser").password(passwordEncoder().encode("spring123"))
+//				.roles("USER").and().withUser("springadmin").password(passwordEncoder().encode("admin123"))
+//				.roles("ADMIN", "USER");
 	}
 
 	@Override
 	public void configure(HttpSecurity http) throws Exception {
-		http.authorizeHttpRequests().antMatchers("/admin").hasRole("ADMIN").antMatchers("/user").hasRole("USER")
-				.anyRequest().authenticated().and().formLogin(withDefaults());
+		http.csrf().disable().authorizeHttpRequests().antMatchers("/register").permitAll().anyRequest().permitAll()
+				.and().formLogin();
+		// .and().formLogin();
+//		.authorizeHttpRequests().antMatchers("/admin").hasRole("ADMIN").antMatchers("/user").hasRole("USER")
+//				.anyRequest().permitAll();// .authenticated();// .and();// .formLogin(withDefaults());
 	}
 
 	@Bean
