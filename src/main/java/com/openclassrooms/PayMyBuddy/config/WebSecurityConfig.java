@@ -17,11 +17,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Autowired
-	private DataSource dataSource;
+	private DataSource datasource;
 
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.jdbcAuthentication().passwordEncoder(passwordEncoder()).dataSource(dataSource)
+		auth.jdbcAuthentication().passwordEncoder(passwordEncoder()).dataSource(datasource)
 				.usersByUsernameQuery("select username,password,'true' as enabled from user where username=?")
 				.authoritiesByUsernameQuery("select username,password from user where username=?");
 

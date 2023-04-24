@@ -32,7 +32,7 @@
                
             </div>
       	</nav>         
-         <form action="#" method="post" th:action="@{/register}" th:object="${user}">
+         <form action="#" method="post" th:action="@{/addConnection}" th:object="${user}">
             <h2 class = "mt-4">Add connection</h2>
             <hr/>
             <!-- Form levels error messages here -->
@@ -44,7 +44,7 @@
             <div class = "form-group row ">
                <label for = "title" class = "col-sm-2 col-form-label">email</label>
                <div class = "col-sm-4">
-                  <input th:field="*{name}" type = "text" class = "form-control" placeholder = "Mandatory">
+                  <input th:field="*{username}" type = "text" class = "form-control" placeholder = "Mandatory">
                </div>
                <div class="col-sm-4">
         			<span class="text-danger"> </span>      

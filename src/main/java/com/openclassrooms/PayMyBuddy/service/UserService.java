@@ -20,6 +20,8 @@ public class UserService {
 
 	public User addUser(User user) {
 		user.setPassword(passwordEncoder.encode(user.getPassword()));
+//		User newuser = new User(16, "ode", "ode", "pass", "ode", 100, null, null);
+//		user.addAssociate(newuser);
 		userRepository.save(user);
 		return user;
 	}
@@ -41,8 +43,23 @@ public class UserService {
 		return;
 	}
 
-	public void addAssociation(String username) {
-		findUserByUsername(username);
+	public User updateUser(User user) {
+		Optional<User> userUpdate = userRepository.findByUsername(user.getUsername());
+		User newUser = null;
+		if (userUpdate.isPresent())
+			newUser = userUpdate.get();
+		newUser.setAccountBalance(user.getAccountBalance());
+		newUser.setEmail(user.getEmail());
+		userRepository.save(newUser);
+		return newUser;
+	}
+
+	public void addAssociation(String username2) {
+		Optional<User> user = findUserByUsername("user4");
+		Optional<User> user2 = findUserByUsername(username2);
+//		User newuser = new User(16, "ode", "ode", "pass", "ode", 100, null, null);
+		user.get().addAssociate(user2.get());
+		userRepository.save(user.get());
 
 	}
 }

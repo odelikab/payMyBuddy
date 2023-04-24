@@ -1,10 +1,17 @@
 package com.openclassrooms.PayMyBuddy.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotBlank;
 
 import com.sun.istack.NotNull;
 
@@ -20,19 +27,29 @@ import lombok.NoArgsConstructor;
 public class User {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private int userId;
-	@NotNull
+	@NotBlank
 	private String name;
-	@NotNull
+	@NotBlank
+	@Column(unique = true, length = 20)
 	private String username;
-	@NotNull
+	@NotBlank
 	private String password;
-	@NotNull
+	@NotBlank
+	@Column(unique = true, length = 50)
 	private String email;
 	@NotNull
 	private Integer accountBalance;
-//	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
-//	List<User> associateUser = new ArrayList<>();
+	@ManyToMany
+	List<User> associateUser;
+	@OneToMany // (mappedBy = "associateUser", cascade = CascadeType.ALL)
+	List<User> associateTo = new ArrayList<>();
+
+	public void addAssociate(User user) {
+
+		associateTo.add(user);
+//			comment.setProduct(this);
+	}
 
 }
