@@ -33,7 +33,7 @@
             </div>
       	</nav>         
          <form action="#" method="post" th:action="@{/addConnection}" th:object="${user}">
-            <h2 class = "mt-4">Add connection</h2>
+            <h2 class = "mt-4">Add connection <span th:text="${thisuser.username}"> name</span></h2>
             <hr/>
             <!-- Form levels error messages here -->
             <div class = "form-group row ">
@@ -53,7 +53,7 @@
             
             <div class = "form-group row">
                <div class = "col-sm-10">
-                  <button type = "submit" class = "btn btn-primary">Submit</button>
+                  <button type = "submit" class = "btn btn-primary" >Submit</button>
                </div>            
             </div>
             

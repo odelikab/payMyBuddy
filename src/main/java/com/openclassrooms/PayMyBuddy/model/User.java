@@ -9,7 +9,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
 
@@ -29,10 +28,10 @@ public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private int userId;
-	@NotBlank
+	@NotBlank(message = "ce champ ne doit pas etre vide")
 	private String name;
 	@NotBlank
-	@Column(unique = true, length = 20)
+	@Column(unique = true, length = 50)
 	private String username;
 	@NotBlank
 	private String password;
@@ -43,7 +42,7 @@ public class User {
 	private Integer accountBalance;
 	@ManyToMany
 	List<User> associateUser;
-	@OneToMany // (mappedBy = "associateUser", cascade = CascadeType.ALL)
+	@ManyToMany // (mappedBy = "associateUser", cascade = CascadeType.ALL)
 	List<User> associateTo = new ArrayList<>();
 
 	public void addAssociate(User user) {

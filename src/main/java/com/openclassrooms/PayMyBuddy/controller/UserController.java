@@ -1,17 +1,16 @@
 package com.openclassrooms.PayMyBuddy.controller;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +23,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 import com.openclassrooms.PayMyBuddy.model.User;
+import com.openclassrooms.PayMyBuddy.model.UserDepositDTO;
 import com.openclassrooms.PayMyBuddy.service.UserService;
 
 import lombok.Data;
@@ -35,7 +35,6 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 
-	@RolesAllowed(value = { "USER" })
 	@PostMapping("/register")
 	public ModelAndView addUser(@Valid User user, BindingResult bindingResult) {
 		if (bindingResult.hasErrors()) {
@@ -47,7 +46,7 @@ public class UserController {
 		return new ModelAndView(redirectView);
 	}
 
-	@RolesAllowed({ "USER", "ADMIN" })
+	// @RolesAllowed({ "USER", "ADMIN" })
 	@GetMapping("/register")
 	public ModelAndView getRegister() {
 		String viewname = "register";
@@ -56,7 +55,6 @@ public class UserController {
 		return new ModelAndView(viewname, model);
 	}
 
-	@RolesAllowed(value = { "USER" })
 	@GetMapping("/users")
 	public Iterable<User> getUsers() {
 		return userService.getUsers();
@@ -83,7 +81,6 @@ public class UserController {
 		}
 	}
 
-	@RolesAllowed("USER")
 	@GetMapping("/user")
 	public Object getUser() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -97,35 +94,45 @@ public class UserController {
 	}
 
 	@DeleteMapping("/user/{id}")
-	public String deleteUser(@PathVariable int id) {
+	public String deleteUser(@PathVariable("id") final Integer id) {
 		userService.deleteUser(id);
 		return "user " + id + " deleted";
 	}
 
 	@PutMapping("/user/{id}")
-	public String updateUser(@PathVariable int id, @RequestBody User user) {
+	public String updateUser(@PathVariable Integer id, @RequestBody User user) {
 		userService.findUserById(id);
 		return "user " + id + " deleted";
 	}
 
 	@GetMapping("/addConnection")
-	public ModelAndView addAssociation(Model modele) {
+	public ModelAndView addAssociation(Principal user) {
 		String viewname = "addConnection";
 		Map<String, Object> model = new HashMap<String, Object>();
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		Object currentUserName = authentication.getName();
+//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//		String currentUserName = authentication.getName();
+		User userAuth = userService.findUserByUsername(user.getName()).get();
 		model.put("user", new User());
+		model.put("thisuser", userAuth);
 //		userService.addAssociation();
 		return new ModelAndView(viewname, model);
 	}
 
 	@PostMapping("/addConnection")
-	public ModelAndView addConnectUser(User user) {
+	public ModelAndView addConnectUser(Principal user, User userA) {
 //		Optional<User> user4 = userService.findUserByUsername("user4");
-		userService.addAssociation(user.getUsername());
+		userA.getUsername();
+		userService.addAssociation(user.getName(), userA.getUsername());
 		RedirectView redirectView = new RedirectView();
 		redirectView.setUrl("/");
 		return new ModelAndView(redirectView);
+	}
 
+	@PostMapping("/deposit")
+	public User deposit(UserDepositDTO userDepositDTO, Principal principal) {
+//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//		String currentUserName = authentication.getName();
+		userDepositDTO.setUsername(principal.getName());
+		return userService.deposit(userDepositDTO);
 	}
 }
