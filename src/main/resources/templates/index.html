@@ -42,6 +42,53 @@
       	</nav> 
 		<h2 th:inline="text" class = "mt-4">Welcome [[${#httpServletRequest.remoteUser}]] to the application!</h2> <br>
 		<h5 >Easy transfer between friends !</h5>
+		<form action="#" method="post" th:action="@{/}" th:object="${transac}">
+			<hr />
+			<!-- Form levels error messages here -->
+			<div class="form-group row ">
+				<div class="col-sm-8">
+					<span class="text-danger"> </span>
+				</div>
+			</div>
+
+			<div class="form-group row ">
+				<label for="amount" class="col-sm-2 col-form-label">select connection</label>
+				<div class="col-sm-4">
+					<select th:field="*{receiver}">
+						<option value="0">select connection</option>
+						<option th:each="liste : ${list}" th:value="${liste}" th:text="${liste}">Liste</option>
+					</select>
+				</div>
+				<div class="col-sm-4">
+				<input th:field="*{amount}" type="text" class="form-control" placeholder="Mandatory">
+
+					<span class="text-danger"> </span>
+				</div>
+			</div>
+
+			<div class="form-group row">
+				<div class="col-sm-10">
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</div>
+			</div>
+
+		</form>
+		<table class="table">
+			<thead class = "thead-light">
+		        <tr>
+		            <th class="text-left">Connections</th>
+		            <th class="text-left">Description</th>
+		            <th class="text-left">Amount</th>
+		        </tr>
+		    </thead>
+		    <tbody>
+				<tr th:each="transac: ${alltransac}">
+						<td><span th:text="${transac.receiver}"> receiver </span></td>
+						<td><span th:text="${transac.description}"> desc </span></td>
+						<td><span th:text="${transac.amount}"> amount </span></td>
+				</tr>
+			</tbody>
+		    </table>
 		
 	</div>
 

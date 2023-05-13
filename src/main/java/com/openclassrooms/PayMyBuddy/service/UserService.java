@@ -1,15 +1,18 @@
 package com.openclassrooms.PayMyBuddy.service;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.openclassrooms.PayMyBuddy.model.Transaction;
 import com.openclassrooms.PayMyBuddy.model.User;
 import com.openclassrooms.PayMyBuddy.model.UserDepositDTO;
+import com.openclassrooms.PayMyBuddy.repository.TransactionRepository;
 import com.openclassrooms.PayMyBuddy.repository.UserRepository;
 
 @Service
@@ -17,6 +20,9 @@ public class UserService {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private TransactionRepository transactionRepository;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -62,17 +68,54 @@ public class UserService {
 	public void addAssociation(String username, String username2) {
 		Optional<User> user = findUserByUsername(username);
 		Optional<User> user2 = findUserByUsername(username2);
-//		User newuser = new User(16, "ode", "ode", "pass", "ode", 100, null, null);
-		user.get().addAssociate(user2.get());
-		userRepository.save(user.get());
+		if (user2.isPresent()) {
+			user.get().addAssociate(user2.get());
+			userRepository.save(user.get());
+		} else
+			return;
 	}
 
 	public User deposit(UserDepositDTO userDepositDTO) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
 		Optional<User> user = findUserByUsername(userDepositDTO.getUsername());
 		User userFound = user.get();
 		userFound.setAccountBalance(userDepositDTO.getDepositAmount() + user.get().getAccountBalance());
 		return userRepository.save(user.get());
+	}
+
+	public Set<String> listAssociates(int id) {
+		User userFound = findUserById(id).get();
+		Set<User> list = new HashSet<>();
+		Set<String> listUser = new HashSet<>();
+
+		list = userFound.getAssociateTo();
+		for (User user : getUsers()) {
+			if (user.getAssociateTo().contains(userFound))
+				listUser.add(user.getUsername());
+		}
+		for (User user : list) {
+			listUser.add(user.getUsername());
+		}
+		return listUser;
+	}
+
+	public void transfer(Transaction transaction) {
+		User sender = findUserByUsername(transaction.getSender()).get();
+		User receiver = findUserByUsername(transaction.getReceiver()).get();
+		if (sender.getAccountBalance() - transaction.getAmount() > 0) {
+			sender.setAccountBalance(sender.getAccountBalance() - transaction.getAmount());
+			receiver.setAccountBalance(transaction.getAmount() + receiver.getAccountBalance());
+			transactionRepository.save(transaction);
+			userRepository.save(receiver);
+			userRepository.save(sender);
+		}
+
+	}
+
+	public List<Transaction> getTransactions() {
+		return transactionRepository.findAll();
+	}
+
+	public List<Transaction> findTransactionBySender(String sender) {
+		return transactionRepository.findBySender(sender);
 	}
 }

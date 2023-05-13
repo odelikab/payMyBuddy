@@ -1,13 +1,14 @@
 package com.openclassrooms.PayMyBuddy.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
@@ -27,7 +28,7 @@ public class User {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	private int userId;
+	private int userId = -1;
 	@NotBlank(message = "ce champ ne doit pas etre vide")
 	private String name;
 	@NotBlank
@@ -40,15 +41,13 @@ public class User {
 	private String email;
 	@NotNull
 	private Integer accountBalance;
-	@ManyToMany
-	List<User> associateUser;
-	@ManyToMany // (mappedBy = "associateUser", cascade = CascadeType.ALL)
-	List<User> associateTo = new ArrayList<>();
+
+	@ManyToMany // FetchType.LAZY by default
+	@JoinTable(name = "user_connections", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "associateTo"))
+	Set<User> associateTo;
 
 	public void addAssociate(User user) {
-
 		associateTo.add(user);
-//			comment.setProduct(this);
 	}
 
 }

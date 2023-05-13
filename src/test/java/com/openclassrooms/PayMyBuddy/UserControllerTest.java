@@ -1,8 +1,11 @@
 package com.openclassrooms.PayMyBuddy;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -32,6 +36,8 @@ import com.openclassrooms.PayMyBuddy.repository.UserRepository;
 @AutoConfigureMockMvc
 public class UserControllerTest {
 
+	private User testUser;
+
 	@Autowired
 	private MockMvc mockMvc;
 
@@ -41,11 +47,21 @@ public class UserControllerTest {
 	@Autowired
 	private UserRepository userRepository;
 
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
 	@BeforeEach
 	public void setUp() {
 		userRepository.deleteAll();
+		testUser = new User();
+		testUser.setName("testUser");
+		testUser.setPassword(passwordEncoder.encode("testUser"));
+		testUser.setUsername("testUser");
+		testUser.setEmail("testUser");
+		assertEquals(-1, testUser.getUserId());
+		testUser = userRepository.save(testUser);
+		assertNotEquals(-1, testUser.getUserId());
 		mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-
 	}
 
 	@Test
@@ -76,7 +92,6 @@ public class UserControllerTest {
 		} catch (Exception e) {
 //			e.printStackTrace();
 		}
-
 	}
 
 	@Test
@@ -87,7 +102,8 @@ public class UserControllerTest {
 
 	@Test
 	public void testdeleteUser() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.delete("/user/{id}", "47")).andDo(print());
+		mockMvc.perform(MockMvcRequestBuilders.delete("/user/{id}", testUser.getUserId())).andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	@Test
@@ -97,15 +113,40 @@ public class UserControllerTest {
 
 	@Test
 	public void testLoginWithGoodPassword() throws Exception {
-		testAddUser();
-		mockMvc.perform(formLogin("/login").user("testAddUser").password("testAddUser")).andExpect(authenticated());
+//		testAddUser();
+//		mockMvc.perform(MockMvcRequestBuilders.post("/register").param("username", "testAddUser")
+//				.param("name", "testAddUser").param("email", "testAddUser").param("password", "testAddUser"))
+//				.andDo(print());
+		mockMvc.perform(formLogin("/login").user("testUser").password("testUser")).andDo(print())
+				.andExpect(authenticated());
 	}
 
 	@Test
 	public void testLoginWithWrongPassword() throws Exception {
-		testAddUser();
-		mockMvc.perform(formLogin("/login").user("testAddUser").password("testpassword")).andExpect(unauthenticated());
-
+//		testAddUser();
+		mockMvc.perform(formLogin("/login").user("testUser").password("testpassword")).andDo(print())
+				.andExpect(unauthenticated());
 	}
 
+	@Test
+	public void testAccessAssociationForLoggedUser() throws Exception {
+		mockMvc.perform(get("/addConnection").with(user("testUser").password("testUser"))).andDo(print())
+				.andExpect(view().name("addConnection")).andExpect(model().size(2))
+				.andExpect(model().attributeExists("user"));
+	}
+
+	@Test
+	public void testAccessAssociationForUnloggedUser() throws Exception {
+		mockMvc.perform(get("/addConnection")).andDo(print()).andExpect(status().is5xxServerError());
+	}
+
+	@Test
+	public void testAssociationWithKnownUser() throws Exception {
+//		mockMvc.perform(post("/addConnection")).andDo(print());
+	}
+
+	@Test
+	public void testDeposit() throws Exception {
+//		mockMvc.perform(post("/deposit")
+	}
 }
