@@ -43,7 +43,7 @@ public class User {
 	private Integer accountBalance;
 
 	@ManyToMany // FetchType.LAZY by default
-	@JoinTable(name = "user_connections", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "associateTo"))
+	@JoinTable(name = "user_connections", joinColumns = @JoinColumn(name = "userId"), inverseJoinColumns = @JoinColumn(name = "associateTo"))
 	Set<User> associateTo;
 
 	public void addAssociate(User user) {

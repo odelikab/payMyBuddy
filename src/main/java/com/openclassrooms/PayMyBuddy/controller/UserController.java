@@ -140,12 +140,16 @@ public class UserController {
 	public ModelAndView addAssociation(Principal user) {
 		String viewname = "addConnection";
 		Map<String, Object> model = new HashMap<String, Object>();
-//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		User userAuth = userService.findUserByUsername(user.getName()).get();
+		if (user != null) {
+			User userAuth = userService.findUserByUsername(user.getName()).get();
 //		List<String> list = userService.listAssociates(userAuth.getUserId());
-		model.put("user", new UserDepositDTO());
-		model.put("thisuser", userAuth.getUsername());
+			model.put("user", new UserDepositDTO());
+			model.put("thisuser", userAuth.getUsername());
+			return new ModelAndView(viewname, model);
 //		model.put("list", list);
+		}
+		model.put("user", new UserDepositDTO());
+
 		return new ModelAndView(viewname, model);
 	}
 

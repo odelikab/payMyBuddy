@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 public class Transaction {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Integer transactionId;
 	@NotBlank
 	private String sender;

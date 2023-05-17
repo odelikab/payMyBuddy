@@ -10,6 +10,7 @@ import static org.springframework.security.test.web.servlet.response.SecurityMoc
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -17,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -137,12 +139,38 @@ public class UserControllerTest {
 
 	@Test
 	public void testAccessAssociationForUnloggedUser() throws Exception {
-		mockMvc.perform(get("/addConnection")).andDo(print()).andExpect(status().is5xxServerError());
+		mockMvc.perform(get("/addConnection")).andDo(print()).andExpect(status().isOk())
+				.andExpect(result -> assertTrue(result.getResolvedException() instanceof Exception));
 	}
 
 	@Test
 	public void testAssociationWithKnownUser() throws Exception {
-//		mockMvc.perform(post("/addConnection")).andDo(print());
+		User user2 = new User();
+		user2.setEmail("user2");
+		user2.setUsername("user2");
+		user2.setName("user2");
+		user2.setPassword(passwordEncoder.encode("user2"));
+		user2 = userRepository.save(user2);
+		Set<User> listAssociateUsers = testUser.getAssociateTo();
+//		assertEquals(0, listAssociateUsers.size());
+		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("username", "user2")
+				.param("depositAmount", "0")).andDo(print()).andExpect(status().isFound());
+		testUser = userRepository.findByUsername("testUser").get();
+		listAssociateUsers = userRepository.findByAssociateToUsername("user2");
+		System.out.println(testUser);
+		assertEquals(1, listAssociateUsers.size());
+	}
+
+	@Test
+	public void testAssociationWithUnknownUser() throws Exception {
+		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("username", "user2")
+				.param("depositAmount", "0")).andDo(print()).andExpect(status().isFound());
+
+	}
+
+	@Test
+	public void testTransactionWithKnownUser() throws Exception {
+
 	}
 
 	@Test
