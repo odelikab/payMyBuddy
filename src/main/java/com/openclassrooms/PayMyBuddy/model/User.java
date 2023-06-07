@@ -7,8 +7,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
@@ -16,10 +14,13 @@ import javax.validation.constraints.NotBlank;
 import com.sun.istack.NotNull;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+//@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -40,10 +41,10 @@ public class User {
 	@Column(unique = true, length = 50)
 	private String email;
 	@NotNull
-	private Integer accountBalance;
+	private double accountBalance;
 
 	@ManyToMany // FetchType.LAZY by default
-	@JoinTable(name = "user_connections", joinColumns = @JoinColumn(name = "userId"), inverseJoinColumns = @JoinColumn(name = "associateTo"))
+//	@JoinTable(name = "user_connections", joinColumns = @JoinColumn(name = "userId"), inverseJoinColumns = @JoinColumn(name = "associateTo"))
 	Set<User> associateTo;
 
 	public void addAssociate(User user) {

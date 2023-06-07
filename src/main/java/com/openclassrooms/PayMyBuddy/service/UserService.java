@@ -6,8 +6,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.openclassrooms.PayMyBuddy.model.Transaction;
 import com.openclassrooms.PayMyBuddy.model.User;
@@ -65,14 +67,15 @@ public class UserService {
 		return newUser;
 	}
 
-	public void addAssociation(String username, String username2) {
+	public void addAssociation(String username, String username2) throws NotFoundException {
 		Optional<User> user = findUserByUsername(username);
 		Optional<User> user2 = findUserByUsername(username2);
+		User userAuth = user.get();
 		if (user2.isPresent()) {
-			user.get().addAssociate(user2.get());
+			userAuth.addAssociate(user2.get());
 			userRepository.save(user.get());
 		} else
-			return;
+			throw new NotFoundException();
 	}
 
 	public User deposit(UserDepositDTO userDepositDTO) {
@@ -98,15 +101,18 @@ public class UserService {
 		return listUser;
 	}
 
+	@Transactional
 	public void transfer(Transaction transaction) {
-		User sender = findUserByUsername(transaction.getSender()).get();
-		User receiver = findUserByUsername(transaction.getReceiver()).get();
-		if (sender.getAccountBalance() - transaction.getAmount() > 0) {
-			sender.setAccountBalance(sender.getAccountBalance() - transaction.getAmount());
-			receiver.setAccountBalance(transaction.getAmount() + receiver.getAccountBalance());
+		User sender = transaction.getSender();
+		User receiver = transaction.getReceiver();
+		int transferAmount = transaction.getAmount();
+		double fees = transferAmount * 0.5 / 100;
+		if (sender.getAccountBalance() - transferAmount > 0) {
+			sender.setAccountBalance(sender.getAccountBalance() - transferAmount - fees);
+			receiver.setAccountBalance(transferAmount + receiver.getAccountBalance());
 			transactionRepository.save(transaction);
-			userRepository.save(receiver);
-			userRepository.save(sender);
+//			userRepository.save(receiver);
+//			userRepository.save(sender);
 		}
 
 	}
@@ -116,6 +122,14 @@ public class UserService {
 	}
 
 	public List<Transaction> findTransactionBySender(String sender) {
-		return transactionRepository.findBySender(sender);
+		return transactionRepository.findBySenderUsername(sender);
+	}
+
+	public User transferToBank(UserDepositDTO userDepositDTO) {
+		Optional<User> user = findUserByUsername(userDepositDTO.getUsername());
+		User userFound = user.get();
+		userFound.setAccountBalance(userFound.getAccountBalance() - userDepositDTO.getDepositAmount());
+		return userRepository.save(userFound);
+
 	}
 }

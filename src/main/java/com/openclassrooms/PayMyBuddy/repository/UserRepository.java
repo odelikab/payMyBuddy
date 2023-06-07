@@ -12,6 +12,6 @@ import com.openclassrooms.PayMyBuddy.model.User;
 public interface UserRepository extends JpaRepository<User, Integer> {
 	Optional<User> findByUsername(String username);
 
-	Set<User> findByAssociateToUsername(String username);
+	Set<User> findByAssociateToUserId(int id);
 
 }

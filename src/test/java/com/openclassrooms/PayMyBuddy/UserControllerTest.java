@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -115,17 +116,12 @@ public class UserControllerTest {
 
 	@Test
 	public void testLoginWithGoodPassword() throws Exception {
-//		testAddUser();
-//		mockMvc.perform(MockMvcRequestBuilders.post("/register").param("username", "testAddUser")
-//				.param("name", "testAddUser").param("email", "testAddUser").param("password", "testAddUser"))
-//				.andDo(print());
 		mockMvc.perform(formLogin("/login").user("testUser").password("testUser")).andDo(print())
 				.andExpect(authenticated());
 	}
 
 	@Test
 	public void testLoginWithWrongPassword() throws Exception {
-//		testAddUser();
 		mockMvc.perform(formLogin("/login").user("testUser").password("testpassword")).andDo(print())
 				.andExpect(unauthenticated());
 	}
@@ -139,8 +135,9 @@ public class UserControllerTest {
 
 	@Test
 	public void testAccessAssociationForUnloggedUser() throws Exception {
-		mockMvc.perform(get("/addConnection")).andDo(print()).andExpect(status().isOk())
-				.andExpect(result -> assertTrue(result.getResolvedException() instanceof Exception));
+		mockMvc.perform(get("/addConnection")).andDo(print()).andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("http://localhost/login"));
+//				.andExpect(result -> assertTrue(result.getResolvedException() instanceof Exception));
 	}
 
 	@Test
@@ -151,30 +148,53 @@ public class UserControllerTest {
 		user2.setName("user2");
 		user2.setPassword(passwordEncoder.encode("user2"));
 		user2 = userRepository.save(user2);
-		Set<User> listAssociateUsers = testUser.getAssociateTo();
+		Set<User> listAssociateUsers = new HashSet<>();
+//		listAssociateUsers = testUser.getAssociateTo();
 //		assertEquals(0, listAssociateUsers.size());
 		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("username", "user2")
 				.param("depositAmount", "0")).andDo(print()).andExpect(status().isFound());
 		testUser = userRepository.findByUsername("testUser").get();
-		listAssociateUsers = userRepository.findByAssociateToUsername("user2");
-		System.out.println(testUser);
+		listAssociateUsers = testUser.getAssociateTo();
+		listAssociateUsers = userRepository.findByAssociateToUserId(user2.getUserId());
 		assertEquals(1, listAssociateUsers.size());
 	}
 
 	@Test
 	public void testAssociationWithUnknownUser() throws Exception {
-		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("username", "user2")
-				.param("depositAmount", "0")).andDo(print()).andExpect(status().isFound());
+		try {
+			mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser"))
+					.param("username", "userUnkwown").param("depositAmount", "0")).andDo(print());
+			fail("must fail when unkwown user");
+//				.andExpect(result -> assertTrue(result.getResolvedException() instanceof Exception));
+		} catch (Exception e) {
 
+		}
+	}
+
+	@Test
+	public void testHomepage() throws Exception {
+		mockMvc.perform(get("/")).andDo(print()).andExpect(view().name("index")).andExpect(model().size(3))
+				.andExpect(model().attributeExists("user"));
+	}
+
+	@Test
+	public void testHomepageWithAuthenticatedUser() throws Exception {
+		mockMvc.perform(get("/").with(user("testUser").password("testUser"))).andDo(print())
+				.andExpect(view().name("index")).andExpect(model().size(5))
+				.andExpect(model().attributeExists("alltransac"));
 	}
 
 	@Test
 	public void testTransactionWithKnownUser() throws Exception {
-
+//		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		mockMvc.perform(post("/").with(user("testUser").password("testUser")).param("transferAmount", "100")
+				.param("receiverUsername", "user2")).andDo(print());
+//				.andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/"));
 	}
 
 	@Test
 	public void testDeposit() throws Exception {
-//		mockMvc.perform(post("/deposit")
+		mockMvc.perform(post("/profile").with(user("testUser").password("testUser")).param("depositAmount", "100")
+				.param("username", "testUser")).andDo(print()).andExpect(redirectedUrl("/"));
 	}
 }

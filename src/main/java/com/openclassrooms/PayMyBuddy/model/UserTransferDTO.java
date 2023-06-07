@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class UserTransferDTO {
 
-	private String username;
+	private String receiverUsername;
 	private int transferAmount;
 }
