@@ -9,5 +9,5 @@ import com.openclassrooms.PayMyBuddy.model.Transaction;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
-	List<Transaction> findBySenderUsername(String sender);
+	List<Transaction> findBySenderEmail(String sender);
 }

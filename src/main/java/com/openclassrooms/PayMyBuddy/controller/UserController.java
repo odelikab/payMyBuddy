@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.validation.Valid;
 
+import org.aspectj.weaver.ast.Not;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.validation.BindingResult;
@@ -38,10 +38,16 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 
-	@PostMapping("/register")
+	/**
+	 * Create a new user in db
+	 * 
+	 * @param an object User
+	 * @return home page
+	 */
+	@PostMapping("/")
 	public ModelAndView addUser(@Valid User user, BindingResult bindingResult) {
 		if (bindingResult.hasErrors()) {
-			return new ModelAndView("register");
+			return new ModelAndView("index");
 		}
 		userService.addUser(user);
 		RedirectView redirectView = new RedirectView();
@@ -49,18 +55,59 @@ public class UserController {
 		return new ModelAndView(redirectView);
 	}
 
-	// @RolesAllowed({ "USER", "ADMIN" })
-	@GetMapping("/register")
+	/**
+	 * Get home page
+	 * 
+	 * @return home page
+	 */
+	@GetMapping("/")
 	public ModelAndView getRegister() {
-		String viewname = "register";
+		String viewname = "index";
 		Map<String, Object> model = new HashMap<String, Object>();
 		model.put("user", new User());
 		return new ModelAndView(viewname, model);
 	}
 
-	@GetMapping("/")
+	/**
+	 * Get Add connection page
+	 * 
+	 * @param logged user
+	 * @return association page
+	 */
+	@GetMapping("/addConnection")
+	public ModelAndView addAssociation(Principal user) {
+		String viewname = "addConnection";
+		Map<String, Object> model = new HashMap<String, Object>();
+		User userAuth = userService.findUserByUsername(user.getName()).get();
+		model.put("user", new UserDepositDTO());
+		model.put("thisuser", userAuth.getUsername());
+		return new ModelAndView(viewname, model);
+	}
+
+	/**
+	 * Add connection to other user
+	 * 
+	 * @param username of user to associate
+	 * @return addConnection page
+	 * @throws NotFoundException
+	 */
+	@PostMapping("/addConnection")
+	public ModelAndView addConnectUser(Principal user, UserDepositDTO userToAssociate) throws NotFoundException {
+		userService.addAssociation(user.getName(), userToAssociate.getUsername());
+		RedirectView redirectView = new RedirectView();
+		redirectView.setUrl("/addConnection");
+		return new ModelAndView(redirectView);
+	}
+
+	/**
+	 * Transfer to associate user
+	 * 
+	 * @param logged user
+	 * @return transfer page
+	 */
+	@GetMapping("/transfer")
 	public ModelAndView home(Principal user) {
-		String viewname = "index";
+		String viewname = "transfer";
 		Map<String, Object> model = new HashMap<String, Object>();
 		User userAuth = new User();
 		model.put("user", new User());
@@ -72,7 +119,7 @@ public class UserController {
 			userAuth = userService.findUserByUsername(user.getName()).get();
 			Set<String> list = userService.listAssociates(userAuth.getUserId());
 			List<Transaction> listTransac = new ArrayList<Transaction>();
-			listTransac = userService.findTransactionBySender(user.getName());// .getTransactions();
+			listTransac = userService.findTransactionBySender(user.getName());
 			model.put("alltransac", listTransac);
 			model.put("list", list);
 			model.put("userAuth", userAuth);
@@ -80,27 +127,84 @@ public class UserController {
 		}
 	}
 
-	@PostMapping("/")
-	public ModelAndView homePost(UserTransferDTO transactionDTO, Principal user) {
-		Optional<User> receiver = userService.findUserByUsername(transactionDTO.getReceiverUsername());
-		if (receiver.isPresent()) {
-			Transaction transaction = new Transaction();
-			transaction.setReceiver(receiver.get());
-			transaction.setSender(userService.findUserByUsername(user.getName()).get());
-			transaction.setAmount(transactionDTO.getTransferAmount());
-//			transaction.setDescription(null;))
-			userService.transfer(transaction);
-		}
+	/**
+	 * Transfer to associate user
+	 * 
+	 * @param amount and partner DTO object
+	 * @param logged user
+	 * @return transfer page
+	 * @throws Not enough money Exception
+	 */
+	@PostMapping("/transfer")
+	public ModelAndView homePost(UserTransferDTO transactionDTO, Principal user) throws Exception {
+//		Optional<User> receiver = userService.findUserByUsername(transactionDTO.getReceiverUsername());
+		transactionDTO.setSenderUsername(user.getName());
+//		if (receiver.isEmpty()) {
+//			Transaction transaction = new Transaction();
+//			transaction.setReceiver(receiver.get());
+//			transaction.setSender(userService.findUserByUsername(user.getName()).get());
+//			transaction.setAmount(transactionDTO.getTransferAmount());
+//			transaction.setDescription(transactionDTO.getDescription());
+		userService.transferToFriend(transactionDTO);
+
 		RedirectView redirectView = new RedirectView();
-		redirectView.setUrl("/");
+		redirectView.setUrl("/transfer");
 		return new ModelAndView(redirectView);
 	}
 
-	@GetMapping("/users")
-	public Iterable<User> getUsers() {
-		return userService.getUsers();
-//		return "yes";
+	/**
+	 * Get profile page
+	 * 
+	 * @param logged user
+	 * @return profile page
+	 */
+	@GetMapping("/profile")
+	public ModelAndView profileGet(Principal user) {
+		String viewname = "profile";
+		Map<String, Object> model = new HashMap<String, Object>();
+		User userAuth = userService.findUserByUsername(user.getName()).get();
+//		List<String> list = userService.listAssociates(userAuth.getUserId());
+		model.put("user", new UserDepositDTO());
+		model.put("thisuser", userAuth);
+		return new ModelAndView(viewname, model);
 	}
+
+	/**
+	 * Deposit from bank account
+	 * 
+	 * @param DepositDTO object
+	 * @return profile page
+	 */
+	@PostMapping("/profile")
+	public ModelAndView profilePost(Principal user, UserDepositDTO userDepositDTO) {
+		userDepositDTO.setUsername(user.getName());
+		userService.deposit(userDepositDTO);
+		RedirectView redirectView = new RedirectView();
+		redirectView.setUrl("/profile");
+		return new ModelAndView(redirectView);
+	}
+
+	/**
+	 * Transfer to Bank account
+	 * 
+	 * @param DTO object
+	 * @return profile page
+	 * @throws Exception
+	 */
+	@PostMapping("/withdraw")
+	public ModelAndView transferCompteBancaire(UserDepositDTO userA, Principal user) throws Exception {
+		userA.setUsername(user.getName());
+		userService.transferToBank(userA);
+		RedirectView redirectView = new RedirectView();
+		redirectView.setUrl("/profile");
+		return new ModelAndView(redirectView);
+	}
+
+//	@GetMapping("/users")
+//	public Iterable<User> getUsers() {
+//		return userService.getUsers();
+//		return "yes";
+//	}
 
 //	@GetMapping("/user/{id}")
 //	public Object getUserById(@PathVariable int id) {
@@ -113,15 +217,15 @@ public class UserController {
 //		}
 //	}
 
-	@GetMapping("/{username}")
-	public User getUserByUsername(@PathVariable String username) {
-		Optional<User> user = userService.findUserByUsername(username);
-		if (user.isPresent()) {
-			return user.get();
-		} else {
-			return null;
-		}
-	}
+//	@GetMapping("/{username}")
+//	public User getUserByUsername(@PathVariable String username) {
+//		Optional<User> user = userService.findUserByUsername(username);
+//		if (user.isPresent()) {
+//			return user.get();
+//		} else {
+//			return null;
+//		}
+//	}
 
 //	@GetMapping("/user")
 //	public Object getUser() {
@@ -146,59 +250,5 @@ public class UserController {
 	public String updateUser(@PathVariable Integer id, @RequestBody User user) {
 		userService.findUserById(id);
 		return "user " + id + " deleted";
-	}
-
-	@GetMapping("/addConnection")
-	public ModelAndView addAssociation(Principal user) {
-		String viewname = "addConnection";
-		Map<String, Object> model = new HashMap<String, Object>();
-//		if (user != null) {
-		User userAuth = userService.findUserByUsername(user.getName()).get();
-//		List<String> list = userService.listAssociates(userAuth.getUserId());
-		model.put("user", new UserDepositDTO());
-		model.put("thisuser", userAuth.getUsername());
-		return new ModelAndView(viewname, model);
-//		model.put("list", list);
-//		model.put("user", new UserDepositDTO());
-	}
-
-	@PostMapping("/addConnection")
-	public ModelAndView addConnectUser(Principal user, @Valid UserDepositDTO userA) throws NotFoundException {
-//		Optional<User> user4 = userService.findUserByUsername("user4");
-		userService.addAssociation(user.getName(), userA.getUsername());
-		RedirectView redirectView = new RedirectView();
-		redirectView.setUrl("/");
-		return new ModelAndView(redirectView);
-	}
-
-	@GetMapping("/profile")
-	public ModelAndView profileGet(Principal user) {
-		String viewname = "profile";
-		Map<String, Object> model = new HashMap<String, Object>();
-//		if (user != null) {
-		User userAuth = userService.findUserByUsername(user.getName()).get();
-//		List<String> list = userService.listAssociates(userAuth.getUserId());
-		model.put("user", new UserDepositDTO());
-		model.put("thisuser", userAuth.getUsername());
-		return new ModelAndView(viewname, model);
-//		model.put("list", list);
-	}
-
-	@PostMapping("/profile")
-	public ModelAndView profilePost(Principal user, UserDepositDTO userA) {
-		userA.setUsername(user.getName());
-		userService.deposit(userA);
-		RedirectView redirectView = new RedirectView();
-		redirectView.setUrl("/");
-		return new ModelAndView(redirectView);
-	}
-
-	@PostMapping("/transfer")
-	public ModelAndView transferCompteBancaire(UserDepositDTO userA, Principal user) {
-		userA.setUsername(user.getName());
-		userService.transferToBank(userA);
-		RedirectView redirectView = new RedirectView();
-		redirectView.setUrl("/");
-		return new ModelAndView(redirectView);
 	}
 }

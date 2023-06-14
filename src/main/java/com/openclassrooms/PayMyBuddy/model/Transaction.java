@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,16 +26,14 @@ public class Transaction {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Integer transactionId;
-//	@NotBlank
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "senderId")
 	private User sender;
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "receiverId")
-//	@JoinColumn(name = "userId", foreignKey = @ForeignKey(name = "userId"))
 	private User receiver;
 	private String description;
-//	@NotBlank
-	private int amount;
+	@NotNull
+	private double amount;
 
 }

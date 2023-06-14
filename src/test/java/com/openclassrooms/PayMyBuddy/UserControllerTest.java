@@ -61,6 +61,7 @@ public class UserControllerTest {
 		testUser.setPassword(passwordEncoder.encode("testUser"));
 		testUser.setUsername("testUser");
 		testUser.setEmail("testUser");
+		testUser.setAccountBalance(0);
 		assertEquals(-1, testUser.getUserId());
 		testUser = userRepository.save(testUser);
 		assertNotEquals(-1, testUser.getUserId());
@@ -69,28 +70,29 @@ public class UserControllerTest {
 
 	@Test
 	public void testAddUserWithMissingParams() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/register").param("username", "springUser0")).andDo(print())
-				.andExpect(view().name("register")).andExpect(status().is2xxSuccessful());
+		mockMvc.perform(MockMvcRequestBuilders.post("/").param("username", "springUser0")).andDo(print())
+				.andExpect(view().name("index")).andExpect(status().is2xxSuccessful());
 		Optional<User> user = userRepository.findByUsername("springUser0");
 		assertTrue(user.isEmpty());
 	}
 
 	@Test
 	public void testAddUser() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/register").param("username", "testAddUser")
-				.param("name", "testAddUser").param("email", "testAddUser").param("password", "testAddUser"))
-				.andDo(print()).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/"));
+		mockMvc.perform(MockMvcRequestBuilders.post("/").param("username", "testAddUser").param("name", "testAddUser")
+				.param("email", "testAddUser").param("password", "testAddUser")).andDo(print())
+				.andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/"));
 	}
 
 	@Test
 	public void testAddUserWithSameEmail() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/register").param("username", "testAddUserWithSameEmail")
+		mockMvc.perform(MockMvcRequestBuilders.post("/").param("username", "testAddUserWithSameEmail")
 				.param("name", "testAddUserWithSameEmail").param("email", "testAddUserWithSameEmail")
 				.param("password", "testAddUserWithSameEmail")).andDo(print());
 		try {
-			mockMvc.perform(MockMvcRequestBuilders.post("/register").param("username", "springuser1")
-					.param("name", "springuser1").param("email", "testAddUserWithSameEmail")
-					.param("password", "springuser1")).andDo(print());
+			mockMvc.perform(
+					MockMvcRequestBuilders.post("/").param("username", "springuser1").param("name", "springuser1")
+							.param("email", "testAddUserWithSameEmail").param("password", "springuser1"))
+					.andDo(print());
 			fail("must fail when same email");
 		} catch (Exception e) {
 //			e.printStackTrace();
@@ -99,7 +101,7 @@ public class UserControllerTest {
 
 	@Test
 	public void testShowForm() throws Exception {
-		mockMvc.perform(get("/register")).andExpect(status().is2xxSuccessful()).andExpect(view().name("register"))
+		mockMvc.perform(get("/")).andExpect(status().is2xxSuccessful()).andExpect(view().name("index"))
 				.andExpect(model().size(1)).andExpect(model().attributeExists("user"));
 	}
 
@@ -137,7 +139,6 @@ public class UserControllerTest {
 	public void testAccessAssociationForUnloggedUser() throws Exception {
 		mockMvc.perform(get("/addConnection")).andDo(print()).andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("http://localhost/login"));
-//				.andExpect(result -> assertTrue(result.getResolvedException() instanceof Exception));
 	}
 
 	@Test
@@ -151,21 +152,22 @@ public class UserControllerTest {
 		Set<User> listAssociateUsers = new HashSet<>();
 //		listAssociateUsers = testUser.getAssociateTo();
 //		assertEquals(0, listAssociateUsers.size());
-		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("username", "user2")
-				.param("depositAmount", "0")).andDo(print()).andExpect(status().isFound());
+		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("username", "user2"))
+				.andDo(print()).andExpect(status().isFound());
 		testUser = userRepository.findByUsername("testUser").get();
 		listAssociateUsers = testUser.getAssociateTo();
 		listAssociateUsers = userRepository.findByAssociateToUserId(user2.getUserId());
+		Iterable<User> myList = userRepository.findByCostNative(user2.getUserId());
 		assertEquals(1, listAssociateUsers.size());
 	}
 
 	@Test
 	public void testAssociationWithUnknownUser() throws Exception {
 		try {
-			mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser"))
-					.param("username", "userUnkwown").param("depositAmount", "0")).andDo(print());
+			mockMvc.perform(
+					post("/addConnection").with(user("testUser").password("testUser")).param("username", "userUnkwown"))
+					.andDo(print());
 			fail("must fail when unkwown user");
-//				.andExpect(result -> assertTrue(result.getResolvedException() instanceof Exception));
 		} catch (Exception e) {
 
 		}
@@ -173,28 +175,66 @@ public class UserControllerTest {
 
 	@Test
 	public void testHomepage() throws Exception {
-		mockMvc.perform(get("/")).andDo(print()).andExpect(view().name("index")).andExpect(model().size(3))
+		mockMvc.perform(get("/")).andDo(print()).andExpect(view().name("index")).andExpect(model().size(1))
 				.andExpect(model().attributeExists("user"));
 	}
 
 	@Test
-	public void testHomepageWithAuthenticatedUser() throws Exception {
-		mockMvc.perform(get("/").with(user("testUser").password("testUser"))).andDo(print())
-				.andExpect(view().name("index")).andExpect(model().size(5))
+	public void testTransferPageWithAuthenticatedUser() throws Exception {
+		mockMvc.perform(get("/transfer").with(user("testUser").password("testUser"))).andDo(print())
+				.andExpect(view().name("transfer")).andExpect(model().size(5))
 				.andExpect(model().attributeExists("alltransac"));
 	}
 
 	@Test
 	public void testTransactionWithKnownUser() throws Exception {
-//		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-		mockMvc.perform(post("/").with(user("testUser").password("testUser")).param("transferAmount", "100")
-				.param("receiverUsername", "user2")).andDo(print());
-//				.andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/"));
+		mockMvc.perform(post("/transfer").with(user("testUser").password("testUser")).param("transferAmount", "100")
+				.param("receiverUsername", "user2")).andDo(print()).andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/transfer"));
 	}
 
 	@Test
 	public void testDeposit() throws Exception {
 		mockMvc.perform(post("/profile").with(user("testUser").password("testUser")).param("depositAmount", "100")
-				.param("username", "testUser")).andDo(print()).andExpect(redirectedUrl("/"));
+				.param("username", "testUser")).andDo(print()).andExpect(redirectedUrl("/profile"));
+		double balance = userRepository.findById(testUser.getUserId()).get().getAccountBalance();
+		assertEquals(100, balance);
+
+	}
+
+	@Test
+	public void testWithdraw() throws Exception {
+		testUser.setAccountBalance(100);
+		testUser = userRepository.save(testUser);
+		mockMvc.perform(post("/withdraw").with(user("testUser").password("testUser")).param("depositAmount", "100")
+				.param("username", "testUser")).andDo(print()).andExpect(redirectedUrl("/profile"));
+		double balance = userRepository.findById(testUser.getUserId()).get().getAccountBalance();
+		assertEquals(0, balance);
+
+	}
+
+	@Test
+	public void testWithdrawWithWrongAmount() throws Exception {
+		testUser.setAccountBalance(100);
+		testUser = userRepository.save(testUser);
+		try {
+			mockMvc.perform(post("/withdraw").with(user("testUser").password("testUser")).param("depositAmount", "200")
+					.param("username", "testUser")).andDo(print()).andExpect(redirectedUrl("/profile"));
+			fail("must fail when amount above balance");
+		} catch (Exception e) {
+
+		}
+	}
+
+	@Test
+	public void testProfilePage() throws Exception {
+		mockMvc.perform(get("/profile").with(user("testUser").password("testUser"))).andDo(print())
+				.andExpect(view().name("profile")).andExpect(model().size(2))
+				.andExpect(model().attributeExists("user"));
+	}
+
+	@Test
+	public void testProfilePageUnauthenticated() throws Exception {
+		mockMvc.perform(get("/profile")).andDo(print()).andExpect(redirectedUrl("http://localhost/login"));
 	}
 }

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.openclassrooms.PayMyBuddy.model.Transaction;
 import com.openclassrooms.PayMyBuddy.model.User;
 import com.openclassrooms.PayMyBuddy.model.UserDepositDTO;
+import com.openclassrooms.PayMyBuddy.model.UserTransferDTO;
 import com.openclassrooms.PayMyBuddy.repository.TransactionRepository;
 import com.openclassrooms.PayMyBuddy.repository.UserRepository;
 
@@ -32,8 +33,6 @@ public class UserService {
 	public User addUser(User user) {
 		user.setPassword(passwordEncoder.encode(user.getPassword()));
 		user.setAccountBalance(0);
-//		User newuser = new User(16, "ode", "ode", "pass", "ode", 100, null, null);
-//		user.addAssociate(newuser);
 		userRepository.save(user);
 		return user;
 	}
@@ -46,8 +45,8 @@ public class UserService {
 		return userRepository.findById(id);
 	}
 
-	public Optional<User> findUserByUsername(String username) {
-		return userRepository.findByUsername(username);
+	public Optional<User> findUserByUsername(String email) {
+		return userRepository.findByEmail(email);
 	}
 
 	public void deleteUser(Integer id) {
@@ -102,19 +101,27 @@ public class UserService {
 	}
 
 	@Transactional
-	public void transfer(Transaction transaction) {
-		User sender = transaction.getSender();
-		User receiver = transaction.getReceiver();
-		int transferAmount = transaction.getAmount();
-		double fees = transferAmount * 0.5 / 100;
-		if (sender.getAccountBalance() - transferAmount > 0) {
-			sender.setAccountBalance(sender.getAccountBalance() - transferAmount - fees);
-			receiver.setAccountBalance(transferAmount + receiver.getAccountBalance());
-			transactionRepository.save(transaction);
-//			userRepository.save(receiver);
-//			userRepository.save(sender);
+	public void transferToFriend(UserTransferDTO transactionDTO) throws Exception {
+		Optional<User> receiver = findUserByUsername(transactionDTO.getReceiverUsername());
+		if (receiver.isEmpty()) {
+			throw new Exception("Receiver not found");
+		} else {
+			User sender = findUserByUsername(transactionDTO.getSenderUsername()).get();
+			User receiverFound = receiver.get();
+			double transferAmount = transactionDTO.getTransferAmount();
+			double fees = transferAmount * 0.5 / 100;
+			Transaction transaction = new Transaction();
+			transaction.setReceiver(receiverFound);
+			transaction.setSender(sender);
+			transaction.setAmount(transactionDTO.getTransferAmount());
+			transaction.setDescription(transactionDTO.getDescription());
+			if (sender.getAccountBalance() - (transferAmount + fees) > 0) {
+				sender.setAccountBalance(sender.getAccountBalance() - transferAmount - fees);
+				receiverFound.setAccountBalance(transferAmount + receiverFound.getAccountBalance());
+				transactionRepository.save(transaction);
+			} else
+				throw new Exception("Not enough money");
 		}
-
 	}
 
 	public List<Transaction> getTransactions() {
@@ -122,14 +129,17 @@ public class UserService {
 	}
 
 	public List<Transaction> findTransactionBySender(String sender) {
-		return transactionRepository.findBySenderUsername(sender);
+		return transactionRepository.findBySenderEmail(sender);
 	}
 
-	public User transferToBank(UserDepositDTO userDepositDTO) {
+	public void transferToBank(UserDepositDTO userDepositDTO) throws Exception {
 		Optional<User> user = findUserByUsername(userDepositDTO.getUsername());
 		User userFound = user.get();
-		userFound.setAccountBalance(userFound.getAccountBalance() - userDepositDTO.getDepositAmount());
-		return userRepository.save(userFound);
+		if (userFound.getAccountBalance() - userDepositDTO.getDepositAmount() >= 0) {
+			userFound.setAccountBalance(userFound.getAccountBalance() - userDepositDTO.getDepositAmount());
+			userRepository.save(userFound);
+		} else
+			throw new Exception("Not enough money");
 
 	}
 }

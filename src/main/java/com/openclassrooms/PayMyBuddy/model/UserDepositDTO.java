@@ -6,6 +6,6 @@ import lombok.Data;
 public class UserDepositDTO {
 
 	private String username;
-	private int depositAmount;
+	private double depositAmount;
 
 }

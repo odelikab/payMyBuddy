@@ -22,21 +22,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 		auth.jdbcAuthentication().passwordEncoder(passwordEncoder()).dataSource(datasource)
-				.usersByUsernameQuery("select username,password,'true' as enabled from user where username=?")
-				.authoritiesByUsernameQuery("select username,password from user where username=?");
-
-//		.inMemoryAuthentication().withUser("springuser").password(passwordEncoder().encode("spring123"))
-//				.roles("USER").and().withUser("springadmin").password(passwordEncoder().encode("admin123"))
-//				.roles("ADMIN", "USER");
+				.usersByUsernameQuery("select email,password,'true' as enabled from user where email=?")
+				.authoritiesByUsernameQuery("select email,password from user where email=?");
 	}
 
 	@Override
 	public void configure(HttpSecurity http) throws Exception {
 		http.csrf().disable().authorizeHttpRequests().antMatchers("/register").permitAll().antMatchers("/addConnection")
-				.authenticated().antMatchers("/profile").authenticated().anyRequest().permitAll().and().formLogin();
-		// .and().formLogin();
-//		.authorizeHttpRequests().antMatchers("/admin").hasRole("ADMIN").antMatchers("/user").hasRole("USER")
-//				.anyRequest().permitAll();// .authenticated();// .and();// .formLogin(withDefaults());
+				.authenticated().antMatchers("/transfer").authenticated().antMatchers("/profile").authenticated()
+				.anyRequest().permitAll().and().formLogin();
 	}
 
 	@Bean
