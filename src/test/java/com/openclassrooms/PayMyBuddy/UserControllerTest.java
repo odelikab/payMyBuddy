@@ -150,9 +150,7 @@ public class UserControllerTest {
 		user2.setPassword(passwordEncoder.encode("user2"));
 		user2 = userRepository.save(user2);
 		Set<User> listAssociateUsers = new HashSet<>();
-//		listAssociateUsers = testUser.getAssociateTo();
-//		assertEquals(0, listAssociateUsers.size());
-		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("username", "user2"))
+		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("email", "user2"))
 				.andDo(print()).andExpect(status().isFound());
 		testUser = userRepository.findByUsername("testUser").get();
 		listAssociateUsers = testUser.getAssociateTo();
@@ -163,14 +161,34 @@ public class UserControllerTest {
 
 	@Test
 	public void testAssociationWithUnknownUser() throws Exception {
-		try {
-			mockMvc.perform(
-					post("/addConnection").with(user("testUser").password("testUser")).param("username", "userUnkwown"))
-					.andDo(print());
-			fail("must fail when unkwown user");
-		} catch (Exception e) {
 
+		mockMvc.perform(
+				post("/addConnection").with(user("testUser").password("testUser")).param("email", "userUnkwown"))
+				.andDo(print()).andExpect(model().attributeExists("error"));
+//			fail("must fail when unkwown user");
+
+	}
+
+	@Test
+	public void testAssociationUserAlreadyAssociated() throws Exception {
+		User user2 = new User();
+		user2.setEmail("user2");
+		user2.setUsername("user2");
+		user2.setName("user2");
+		user2.setPassword(passwordEncoder.encode("user2"));
+		user2 = userRepository.save(user2);
+
+		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("email", "user2"))
+				.andDo(print());
+		try {
+			mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("email", "user2"))
+					.andDo(print()).andExpect(status().isOk()).andExpect(model().attributeExists("error"));
+//			fail("must fail when user2 is already associated");
+
+		} catch (Exception e) {
+			// TODO: handle exception
 		}
+
 	}
 
 	@Test
@@ -187,10 +205,53 @@ public class UserControllerTest {
 	}
 
 	@Test
+	public void testTransactionWithUnknownUser() throws Exception {
+		try {
+			mockMvc.perform(post("/transfer").with(user("testUser").password("testUser")).param("transferAmount", "100")
+					.param("receiverUsername", "user2")).andDo(print()).andExpect(model().attributeExists("error"));// .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/transfer"));
+			// fail("must fail when receiver not found");
+		} catch (Exception e) {
+
+		}
+	}
+
+	@Test
 	public void testTransactionWithKnownUser() throws Exception {
-		mockMvc.perform(post("/transfer").with(user("testUser").password("testUser")).param("transferAmount", "100")
+		User user2 = new User();
+		user2.setEmail("user2");
+		user2.setUsername("user2");
+		user2.setName("user2");
+		user2.setPassword(passwordEncoder.encode("user2"));
+		user2 = userRepository.save(user2);
+		testUser.setAccountBalance(100);
+		testUser = userRepository.save(testUser);
+		mockMvc.perform(post("/transfer").with(user("testUser").password("testUser")).param("transferAmount", "50")
 				.param("receiverUsername", "user2")).andDo(print()).andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("/transfer"));
+		double balanceTestUser = userRepository.findById(testUser.getUserId()).get().getAccountBalance();
+		double balanceUser2 = userRepository.findById(user2.getUserId()).get().getAccountBalance();
+
+		assertEquals(49.75, balanceTestUser);
+		assertEquals(50, balanceUser2);
+	}
+
+	@Test
+	public void testTransactionWithWrongAmount() throws Exception {
+		User user2 = new User();
+		user2.setEmail("user2");
+		user2.setUsername("user2");
+		user2.setName("user2");
+		user2.setPassword(passwordEncoder.encode("user2"));
+		user2 = userRepository.save(user2);
+		testUser.setAccountBalance(100);
+		testUser = userRepository.save(testUser);
+		try {
+			mockMvc.perform(post("/transfer").with(user("testUser").password("testUser")).param("transferAmount", "100")
+					.param("receiverUsername", "user2")).andDo(print()).andExpect(model().attributeExists("error"));
+//			fail("must fail when not enough money");
+		} catch (Exception e) {
+
+		}
 	}
 
 	@Test
@@ -219,8 +280,9 @@ public class UserControllerTest {
 		testUser = userRepository.save(testUser);
 		try {
 			mockMvc.perform(post("/withdraw").with(user("testUser").password("testUser")).param("depositAmount", "200")
-					.param("username", "testUser")).andDo(print()).andExpect(redirectedUrl("/profile"));
-			fail("must fail when amount above balance");
+					.param("username", "testUser")).andDo(print()).andExpect(model().size(4))
+					.andExpect(model().attributeExists("error"));
+//			fail("must fail when amount above balance");
 		} catch (Exception e) {
 
 		}

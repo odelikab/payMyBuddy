@@ -11,7 +11,6 @@ import javax.validation.Valid;
 
 import org.aspectj.weaver.ast.Not;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -89,14 +88,22 @@ public class UserController {
 	 * 
 	 * @param username of user to associate
 	 * @return addConnection page
-	 * @throws NotFoundException
+	 * @throws Exception
 	 */
+
 	@PostMapping("/addConnection")
-	public ModelAndView addConnectUser(Principal user, UserDepositDTO userToAssociate) throws NotFoundException {
-		userService.addAssociation(user.getName(), userToAssociate.getUsername());
-		RedirectView redirectView = new RedirectView();
-		redirectView.setUrl("/addConnection");
-		return new ModelAndView(redirectView);
+	public ModelAndView addConnectUser(Principal user, UserDepositDTO userToAssociate) {
+		try {
+			userService.addAssociation(user.getName(), userToAssociate.getEmail());
+			RedirectView redirectView = new RedirectView();
+			redirectView.setUrl("/addConnection");
+			return new ModelAndView(redirectView);
+		} catch (Exception e) {
+			ModelAndView mvProfile = addAssociation(user);
+			Map<String, Object> newModel = mvProfile.getModel();
+			newModel.put("error", e.getMessage());
+			return mvProfile;
+		}
 	}
 
 	/**
@@ -106,25 +113,23 @@ public class UserController {
 	 * @return transfer page
 	 */
 	@GetMapping("/transfer")
-	public ModelAndView home(Principal user) {
+	public ModelAndView transferToFriend(Principal user) {
 		String viewname = "transfer";
 		Map<String, Object> model = new HashMap<String, Object>();
 		User userAuth = new User();
 		model.put("user", new User());
 		model.put("transac", new UserTransferDTO());
+//		model.put("userAuth", userAuth);
+
+		userAuth = userService.findUserByUsername(user.getName()).get();
+		Set<String> list = userService.listAssociates(userAuth.getUserId());
+		List<Transaction> listTransac = new ArrayList<Transaction>();
+		listTransac = userService.findTransactionBySender(user.getName());
+		model.put("alltransac", listTransac);
+		model.put("list", list);
 		model.put("userAuth", userAuth);
-		if (user == null) {
-			return new ModelAndView(viewname, model);
-		} else {
-			userAuth = userService.findUserByUsername(user.getName()).get();
-			Set<String> list = userService.listAssociates(userAuth.getUserId());
-			List<Transaction> listTransac = new ArrayList<Transaction>();
-			listTransac = userService.findTransactionBySender(user.getName());
-			model.put("alltransac", listTransac);
-			model.put("list", list);
-			model.put("userAuth", userAuth);
-			return new ModelAndView(viewname, model);
-		}
+		return new ModelAndView(viewname, model);
+
 	}
 
 	/**
@@ -137,19 +142,19 @@ public class UserController {
 	 */
 	@PostMapping("/transfer")
 	public ModelAndView homePost(UserTransferDTO transactionDTO, Principal user) throws Exception {
-//		Optional<User> receiver = userService.findUserByUsername(transactionDTO.getReceiverUsername());
-		transactionDTO.setSenderUsername(user.getName());
-//		if (receiver.isEmpty()) {
-//			Transaction transaction = new Transaction();
-//			transaction.setReceiver(receiver.get());
-//			transaction.setSender(userService.findUserByUsername(user.getName()).get());
-//			transaction.setAmount(transactionDTO.getTransferAmount());
-//			transaction.setDescription(transactionDTO.getDescription());
-		userService.transferToFriend(transactionDTO);
+		try {
+			transactionDTO.setSenderUsername(user.getName());
+			userService.transferToFriend(transactionDTO);
 
-		RedirectView redirectView = new RedirectView();
-		redirectView.setUrl("/transfer");
-		return new ModelAndView(redirectView);
+			RedirectView redirectView = new RedirectView();
+			redirectView.setUrl("/transfer");
+			return new ModelAndView(redirectView);
+		} catch (Exception e) {
+			ModelAndView mvProfile = transferToFriend(user);
+			Map<String, Object> newModel = mvProfile.getModel();
+			newModel.put("error", e.getMessage());
+			return mvProfile;
+		}
 	}
 
 	/**
@@ -163,7 +168,6 @@ public class UserController {
 		String viewname = "profile";
 		Map<String, Object> model = new HashMap<String, Object>();
 		User userAuth = userService.findUserByUsername(user.getName()).get();
-//		List<String> list = userService.listAssociates(userAuth.getUserId());
 		model.put("user", new UserDepositDTO());
 		model.put("thisuser", userAuth);
 		return new ModelAndView(viewname, model);
@@ -177,7 +181,7 @@ public class UserController {
 	 */
 	@PostMapping("/profile")
 	public ModelAndView profilePost(Principal user, UserDepositDTO userDepositDTO) {
-		userDepositDTO.setUsername(user.getName());
+		userDepositDTO.setEmail(userService.findUserByEmail(user.getName()).get().getEmail());
 		userService.deposit(userDepositDTO);
 		RedirectView redirectView = new RedirectView();
 		redirectView.setUrl("/profile");
@@ -192,14 +196,33 @@ public class UserController {
 	 * @throws Exception
 	 */
 	@PostMapping("/withdraw")
-	public ModelAndView transferCompteBancaire(UserDepositDTO userA, Principal user) throws Exception {
-		userA.setUsername(user.getName());
-		userService.transferToBank(userA);
-		RedirectView redirectView = new RedirectView();
-		redirectView.setUrl("/profile");
-		return new ModelAndView(redirectView);
+	public ModelAndView transferToBankAccount(UserDepositDTO userWithdraw, Principal user) throws Exception {
+		userWithdraw.setEmail(userService.findUserByEmail(user.getName()).get().getEmail());
+		try {
+			userService.transferToBank(userWithdraw);
+			RedirectView redirectView = new RedirectView();
+			redirectView.setUrl("/profile");
+			return new ModelAndView(redirectView);
+		} catch (Exception e) {
+			e.printStackTrace();
+			ModelAndView mvProfile = profileGet(user);
+			Map<String, Object> newModel = mvProfile.getModel();
+			newModel.put("error", e.getMessage());
+			return mvProfile;
+		}
 	}
 
+	@DeleteMapping("/user/{id}")
+	public String deleteUser(@PathVariable("id") final Integer id) {
+		userService.deleteUser(id);
+		return "user " + id + " deleted";
+	}
+
+	@PutMapping("/user/{id}")
+	public String updateUser(@PathVariable Integer id, @RequestBody User user) {
+		userService.findUserById(id);
+		return "user " + id + " deleted";
+	}
 //	@GetMapping("/users")
 //	public Iterable<User> getUsers() {
 //		return userService.getUsers();
@@ -240,15 +263,4 @@ public class UserController {
 //		return "welcome";
 //	}
 
-	@DeleteMapping("/user/{id}")
-	public String deleteUser(@PathVariable("id") final Integer id) {
-		userService.deleteUser(id);
-		return "user " + id + " deleted";
-	}
-
-	@PutMapping("/user/{id}")
-	public String updateUser(@PathVariable Integer id, @RequestBody User user) {
-		userService.findUserById(id);
-		return "user " + id + " deleted";
-	}
 }

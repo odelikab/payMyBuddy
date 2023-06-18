@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +44,11 @@ public class UserService {
 		return userRepository.findById(id);
 	}
 
-	public Optional<User> findUserByUsername(String email) {
+	public Optional<User> findUserByUsername(String username) {
+		return userRepository.findByUsername(username);
+	}
+
+	public Optional<User> findUserByEmail(String email) {
 		return userRepository.findByEmail(email);
 	}
 
@@ -66,19 +69,26 @@ public class UserService {
 		return newUser;
 	}
 
-	public void addAssociation(String username, String username2) throws NotFoundException {
+	public void addAssociation(String username, String emailAssociate) throws Exception {
 		Optional<User> user = findUserByUsername(username);
-		Optional<User> user2 = findUserByUsername(username2);
+		Optional<User> user2 = findUserByEmail(emailAssociate);
 		User userAuth = user.get();
 		if (user2.isPresent()) {
-			userAuth.addAssociate(user2.get());
-			userRepository.save(user.get());
-		} else
-			throw new NotFoundException();
+			User userToAssociate = user2.get();
+			if (listAssociates(userAuth.getUserId()).contains(userToAssociate.getUsername())) {
+				throw new Exception("User already associated");
+			} else {
+				userAuth.addAssociate(user2.get());
+				userRepository.save(user.get());
+			}
+		} else {
+			throw new Exception("User does not exist in database");
+		}
+
 	}
 
 	public User deposit(UserDepositDTO userDepositDTO) {
-		Optional<User> user = findUserByUsername(userDepositDTO.getUsername());
+		Optional<User> user = findUserByEmail(userDepositDTO.getEmail());
 		User userFound = user.get();
 		userFound.setAccountBalance(userDepositDTO.getDepositAmount() + user.get().getAccountBalance());
 		return userRepository.save(user.get());
@@ -121,6 +131,7 @@ public class UserService {
 				transactionRepository.save(transaction);
 			} else
 				throw new Exception("Not enough money");
+
 		}
 	}
 
@@ -129,11 +140,11 @@ public class UserService {
 	}
 
 	public List<Transaction> findTransactionBySender(String sender) {
-		return transactionRepository.findBySenderEmail(sender);
+		return transactionRepository.findBySenderUsername(sender);
 	}
 
 	public void transferToBank(UserDepositDTO userDepositDTO) throws Exception {
-		Optional<User> user = findUserByUsername(userDepositDTO.getUsername());
+		Optional<User> user = findUserByEmail(userDepositDTO.getEmail());
 		User userFound = user.get();
 		if (userFound.getAccountBalance() - userDepositDTO.getDepositAmount() >= 0) {
 			userFound.setAccountBalance(userFound.getAccountBalance() - userDepositDTO.getDepositAmount());

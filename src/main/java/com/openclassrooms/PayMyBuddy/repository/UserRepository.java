@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	Set<User> findByAssociateToUserId(int id);
 
 	@Query("FROM User WHERE user_id = ?1")
-	public Set<User> findByidJPQL(int id);
+	public User findByidJPQL(int id);
 
 	@Query(value = "SELECT * FROM user_associate_to WHERE user_user_id = :id", nativeQuery = true)
 	public Iterable<User> findByCostNative(@Param("id") int id);

@@ -1,11 +1,13 @@
 package com.openclassrooms.PayMyBuddy.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class UserDepositDTO {
 
-	private String username;
+	private String email;
 	private double depositAmount;
 
 }

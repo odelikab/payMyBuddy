@@ -38,32 +38,52 @@
 
 			</div>
 		</nav>
-		<form action="#" method="post" th:action="@{/addConnection}" th:object="${user}">
-			<h2 class="mt-4">Add connection to <span th:text="${thisuser}"> name</span></h2>
+		<form action="#" method="post" th:action="@{/profile}" th:object="${user}">
+			<h2 class="mt-4">Profile <span th:text="${thisuser.name}"> name</span></h2>
 			<hr />
 			<!-- Form levels error messages here -->
 			<div class="form-group row ">
 				<div class="col-sm-8">
-					<span class="text-danger"> </span>
+					<span>Account Balance : </span>
+					<span th:text="${#numbers.formatDecimal(thisuser.accountBalance, 0, 'COMMA', 2, 'POINT')}" > balance </span>
+				</div>
+				<div class="col-sm-8">
+					<span>username : </span>
+					<span th:text="${thisuser.username}"> username </span>
 				</div>
 			</div>
 			<div class="form-group row ">
-				<label for="email" class="col-sm-2 col-form-label">email</label>
+				<label for="deposit" class="col-sm-2 col-form-label">Deposit amount</label>
 				<div class="col-sm-4">
-					<input th:field="*{email}" type="email" class="form-control" placeholder="Mandatory">
+					<input th:field="*{depositAmount}" type="text" class="form-control" placeholder="Mandatory">
+				</div>
+				<div class="col-sm-4">
+					<span class="text-danger"> </span>
+				</div>
+				<div class="form-group row">
+				<div class="col-sm-10">
+					<button type="submit" class="btn btn-primary">Deposit</button>
+				</div>
+				</div>
+			</div>
+		</form>
+			<form action="#" method="post" th:action="@{/withdraw}" th:object="${user}">
+			<div class="form-group row ">
+				<label for="deposit" class="col-sm-2 col-form-label">Transfer to Bank</label>
+				<div class="col-sm-4">
+					<input th:field="*{depositAmount}" type="text" class="form-control" placeholder="Mandatory">
 				</div>
 				<div class="col-sm-4">
 					<span class="text-danger" th:if="${error} != null"> [[${error}]]  </span>
 				</div>
-			</div>
-
-			<div class="form-group row">
-				<div class="col-sm-10">
-					<button type="submit" class="btn btn-primary">Submit</button>
+				<div class="form-group row">
+					<div class="col-sm-10">
+					<button class="btn btn-primary">Transfer</button>
+					</div>
 				</div>
 			</div>
+			</form>
 
-		</form>
 	</div>
 
 	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"> </script>
