@@ -30,7 +30,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	public void configure(HttpSecurity http) throws Exception {
 		http.csrf().disable().authorizeHttpRequests().antMatchers("/register").permitAll().antMatchers("/addConnection")
 				.authenticated().antMatchers("/transfer").authenticated().antMatchers("/profile").authenticated()
-				.anyRequest().permitAll().and().formLogin();
+				.anyRequest().permitAll().and().formLogin().loginPage("/login").permitAll()
+				.defaultSuccessUrl("/profile", false);
 	}
 
 	@Bean

@@ -153,9 +153,7 @@ public class UserControllerTest {
 		mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("email", "user2"))
 				.andDo(print()).andExpect(status().isFound());
 		testUser = userRepository.findByUsername("testUser").get();
-		listAssociateUsers = testUser.getAssociateTo();
 		listAssociateUsers = userRepository.findByAssociateToUserId(user2.getUserId());
-		Iterable<User> myList = userRepository.findByCostNative(user2.getUserId());
 		assertEquals(1, listAssociateUsers.size());
 	}
 
@@ -182,11 +180,9 @@ public class UserControllerTest {
 				.andDo(print());
 		try {
 			mockMvc.perform(post("/addConnection").with(user("testUser").password("testUser")).param("email", "user2"))
-					.andDo(print()).andExpect(status().isOk()).andExpect(model().attributeExists("error"));
-//			fail("must fail when user2 is already associated");
-
+					.andDo(print()).andExpect(status().isOk())
+					.andExpect(model().attribute("error", "User already associated"));
 		} catch (Exception e) {
-			// TODO: handle exception
 		}
 
 	}
@@ -264,7 +260,7 @@ public class UserControllerTest {
 	}
 
 	@Test
-	public void testWithdraw() throws Exception {
+	public void testWithdrawSuccess() throws Exception {
 		testUser.setAccountBalance(100);
 		testUser = userRepository.save(testUser);
 		mockMvc.perform(post("/withdraw").with(user("testUser").password("testUser")).param("depositAmount", "100")
@@ -281,7 +277,7 @@ public class UserControllerTest {
 		try {
 			mockMvc.perform(post("/withdraw").with(user("testUser").password("testUser")).param("depositAmount", "200")
 					.param("username", "testUser")).andDo(print()).andExpect(model().size(4))
-					.andExpect(model().attributeExists("error"));
+					.andExpect(model().attribute("error", "Not enough money"));
 //			fail("must fail when amount above balance");
 		} catch (Exception e) {
 

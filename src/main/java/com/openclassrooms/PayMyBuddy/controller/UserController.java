@@ -12,12 +12,8 @@ import javax.validation.Valid;
 import org.aspectj.weaver.ast.Not;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
@@ -65,6 +61,17 @@ public class UserController {
 		Map<String, Object> model = new HashMap<String, Object>();
 		model.put("user", new User());
 		return new ModelAndView(viewname, model);
+	}
+
+	/**
+	 * Custom login page
+	 * 
+	 * @return login page
+	 */
+	@GetMapping("/login")
+	public ModelAndView login() {
+		String viewname = "login";
+		return new ModelAndView(viewname);
 	}
 
 	/**
@@ -119,7 +126,6 @@ public class UserController {
 		User userAuth = new User();
 		model.put("user", new User());
 		model.put("transac", new UserTransferDTO());
-//		model.put("userAuth", userAuth);
 
 		userAuth = userService.findUserByUsername(user.getName()).get();
 		Set<String> list = userService.listAssociates(userAuth.getUserId());
@@ -212,21 +218,16 @@ public class UserController {
 		}
 	}
 
-	@DeleteMapping("/user/{id}")
-	public String deleteUser(@PathVariable("id") final Integer id) {
-		userService.deleteUser(id);
-		return "user " + id + " deleted";
-	}
+//	@DeleteMapping("/user/{id}")
+//	public String deleteUser(@PathVariable("id") final Integer id) {
+//		userService.deleteUser(id);
+//		return "user " + id + " deleted";
+//	}
 
-	@PutMapping("/user/{id}")
-	public String updateUser(@PathVariable Integer id, @RequestBody User user) {
-		userService.findUserById(id);
-		return "user " + id + " deleted";
-	}
-//	@GetMapping("/users")
-//	public Iterable<User> getUsers() {
-//		return userService.getUsers();
-//		return "yes";
+//	@PutMapping("/user/{id}")
+//	public String updateUser(@PathVariable Integer id, @RequestBody User user) {
+//		userService.findUserById(id);
+//		return "user " + id + " deleted";
 //	}
 
 //	@GetMapping("/user/{id}")
@@ -248,19 +249,6 @@ public class UserController {
 //		} else {
 //			return null;
 //		}
-//	}
-
-//	@GetMapping("/user")
-//	public Object getUser() {
-//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//		if (!(authentication instanceof AnonymousAuthenticationToken)) {
-//			Object currentUserName = authentication.getName();
-//
-//			return currentUserName;
-//		} else
-//			return "welcome";
-//		modele.addAttribute("user", new User());
-//		return "welcome";
 //	}
 
 }

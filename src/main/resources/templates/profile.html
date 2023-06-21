@@ -9,8 +9,8 @@
 
 <body>
 	<div class="container">
-		<nav class="navbar navbar-expand-sm navbar-dark bg-secondary">
-			<a class="navbar-brand" href="homepage-static.html">Pay my buddy App</a>
+		<nav class="navbar navbar-expand-sm navbar-dark bg-success">
+			<a class="navbar-brand" href="index.html">Pay my buddy App</a>
 			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
 				aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 
@@ -44,12 +44,16 @@
 			<!-- Form levels error messages here -->
 			<div class="form-group row ">
 				<div class="col-sm-8">
-					<span>Account Balance : </span>
-					<span th:text="${#numbers.formatDecimal(thisuser.accountBalance, 0, 'COMMA', 2, 'POINT')}" > balance </span>
+					<span>Name : </span>
+					<span th:text="${thisuser.name}"> name </span>
 				</div>
 				<div class="col-sm-8">
-					<span>username : </span>
+					<span>Username : </span>
 					<span th:text="${thisuser.username}"> username </span>
+				</div>
+				<div class="col-sm-8">
+					<span>Account Balance : </span>
+					<span th:text="${#numbers.formatDecimal(thisuser.accountBalance, 0, 'COMMA', 2, 'POINT')}" > balance </span>
 				</div>
 			</div>
 			<div class="form-group row ">

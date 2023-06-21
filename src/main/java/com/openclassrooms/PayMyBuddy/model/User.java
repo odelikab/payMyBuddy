@@ -25,17 +25,16 @@ public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private int userId = -1;
-	@NotBlank(message = "ce champ ne doit pas etre vide")
+	@NotBlank(message = "this field must not be empty")
 	private String name;
-	@NotBlank
+	@NotBlank(message = "this field must not be empty")
 	@Column(unique = true, length = 50)
 	private String username;
-	@NotBlank
+	@NotBlank(message = "this field must not be empty")
 	private String password;
-	@NotBlank
+	@NotBlank(message = "this field must not be empty")
 	@Column(unique = true, length = 50)
 	private String email;
-//	@NotNull
 	private double accountBalance;
 
 	@ManyToMany // FetchType.LAZY by default

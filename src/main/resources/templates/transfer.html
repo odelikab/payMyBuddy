@@ -12,7 +12,7 @@
 
 <body>
 	<div class="container">
- 		<nav class = "navbar navbar-expand-sm navbar-dark bg-secondary">
+ 		<nav class = "navbar navbar-expand-sm navbar-dark bg-success">
             <a class = "navbar-brand" href = "index.html">Pay my buddy App</a>
             <button class = "navbar-toggler" type = "button" data-toggle = "collapse" 
                data-target = "#navbarSupportedContent" 
@@ -42,7 +42,7 @@
                </ul>
             </div>
       	</nav> 
-		<h2 th:inline="text" class = "mt-4">Welcome <span>[[${userAuth.name}]]</span> to the application! <span> You have <span th:text="${#numbers.formatDecimal(userAuth.accountBalance, 0, 'COMMA', 2, 'POINT')}">balance </span> </span></h2> <br>
+		<h2 th:inline="text" class = "mt-4">Welcome to the application <span>[[${userAuth.name}]]</span> ! You have <span th:text="${#numbers.formatDecimal(userAuth.accountBalance, 0, 'COMMA', 2, 'POINT')}+'€'">balance </span></h2> <br>
 		<h5 >Easy transfer between friends !</h5>
 		<hr />
 			<div class="form-group row ">
@@ -73,15 +73,15 @@
 				</div>
 				<div class="form-group row">
 				<div class="col-sm-10">
-					<button type="submit" class="btn btn-primary">Pay</button>
+					<button type="submit" class="btn btn-success">Pay</button>
 				</div>
 				</div>
 			</div>
 
 		</form>
-		<table class="table">
-			<thead class = "thead-light">
-		        <tr>
+		<table class="table table-striped">
+			<thead class="table-success">
+		        <tr class="table-success">
 		            <th class="text-left">Connections</th>
 		            <th class="text-left">Description</th>
 		            <th class="text-left">Amount</th>
@@ -91,7 +91,7 @@
 				<tr th:each="transaction: ${alltransac}">
 						<td><span th:text="${transaction.receiver.name}"> receiver </span></td>
 						<td><span th:text="${transaction.description}"> desc </span></td>
-						<td><span th:text="${transaction.amount}"> amount </span></td>
+						<td><span th:text="${transaction.amount}+'€'"> amount </span></td>
 				</tr>
 			</tbody>
 		</table>
