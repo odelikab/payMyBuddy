@@ -15,7 +15,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	Optional<User> findByEmail(String email);
 
-	Set<User> findByAssociateToUserId(int id);
+	Set<User> findByAssociatesUserId(int id);
 
 	@Query("FROM User WHERE user_id = ?1")
 	public User findByidJPQL(int id);

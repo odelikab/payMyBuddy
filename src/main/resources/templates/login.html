@@ -27,7 +27,10 @@
           <input type="checkbox" value="remember-me"> Remember me
         </label>
       	</div>
+      	<div th:if="${param.error}" class="alert alert-error fs-6 text-danger">    
+                    Invalid username and/or password.
+                </div>
         <button class="btn btn-lg btn-primary" type="submit">Login</button>
       </form>
-</div>
-</body></html>
+		</div>
+	</body></html>

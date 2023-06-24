@@ -52,23 +52,6 @@ public class UserService {
 		return userRepository.findByEmail(email);
 	}
 
-	public void deleteUser(Integer id) {
-		userRepository.deleteById(id);
-		return;
-	}
-
-	public User updateUser(User user) {
-		Optional<User> userUpdate = userRepository.findByUsername(user.getUsername());
-		User newUser = null;
-		if (userUpdate.isPresent()) {
-			newUser = userUpdate.get();
-			newUser.setAccountBalance(user.getAccountBalance());
-			newUser.setEmail(user.getEmail());
-			userRepository.save(newUser);
-		}
-		return newUser;
-	}
-
 	public void addAssociation(String username, String emailAssociate) throws Exception {
 		Optional<User> user = findUserByUsername(username);
 		Optional<User> user2 = findUserByEmail(emailAssociate);
@@ -99,9 +82,9 @@ public class UserService {
 		Set<User> list = new HashSet<>();
 		Set<String> listUser = new HashSet<>();
 
-		list = userFound.getAssociateTo();
+		list = userFound.getAssociates();
 		for (User user : getUsers()) {
-			if (user.getAssociateTo().contains(userFound))
+			if (user.getAssociates().contains(userFound))
 				listUser.add(user.getUsername());
 		}
 		for (User user : list) {
@@ -151,6 +134,16 @@ public class UserService {
 			userRepository.save(userFound);
 		} else
 			throw new Exception("Not enough money");
+	}
 
+	public User updateUser(User user) {
+		Optional<User> userUpdate = userRepository.findByUsername(user.getUsername());
+		User newUser = null;
+		if (userUpdate.isPresent()) {
+			newUser = userUpdate.get();
+			newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+			userRepository.save(newUser);
+		}
+		return newUser;
 	}
 }

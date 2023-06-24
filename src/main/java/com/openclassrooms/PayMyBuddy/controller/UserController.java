@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.validation.Valid;
@@ -22,6 +23,7 @@ import com.openclassrooms.PayMyBuddy.model.Transaction;
 import com.openclassrooms.PayMyBuddy.model.User;
 import com.openclassrooms.PayMyBuddy.model.UserDepositDTO;
 import com.openclassrooms.PayMyBuddy.model.UserTransferDTO;
+import com.openclassrooms.PayMyBuddy.model.UserUpdateDTO;
 import com.openclassrooms.PayMyBuddy.service.UserService;
 
 import lombok.Data;
@@ -174,7 +176,7 @@ public class UserController {
 		String viewname = "profile";
 		Map<String, Object> model = new HashMap<String, Object>();
 		User userAuth = userService.findUserByUsername(user.getName()).get();
-		model.put("user", new UserDepositDTO());
+		model.put("userDepositDTO", new UserDepositDTO());
 		model.put("thisuser", userAuth);
 		return new ModelAndView(viewname, model);
 	}
@@ -186,8 +188,12 @@ public class UserController {
 	 * @return profile page
 	 */
 	@PostMapping("/profile")
-	public ModelAndView profilePost(Principal user, UserDepositDTO userDepositDTO) {
-		userDepositDTO.setEmail(userService.findUserByEmail(user.getName()).get().getEmail());
+	public ModelAndView profilePost(Principal user, @Valid UserDepositDTO userDepositDTO, BindingResult bindingResult) {
+		if (bindingResult.hasErrors()) {
+			return new ModelAndView("profile");
+		}
+		Optional<User> userAuth = userService.findUserByUsername(user.getName());
+		userDepositDTO.setEmail(userAuth.get().getEmail());
 		userService.deposit(userDepositDTO);
 		RedirectView redirectView = new RedirectView();
 		redirectView.setUrl("/profile");
@@ -203,7 +209,8 @@ public class UserController {
 	 */
 	@PostMapping("/withdraw")
 	public ModelAndView transferToBankAccount(UserDepositDTO userWithdraw, Principal user) throws Exception {
-		userWithdraw.setEmail(userService.findUserByEmail(user.getName()).get().getEmail());
+		Optional<User> userAuth = userService.findUserByUsername(user.getName());
+		userWithdraw.setEmail(userAuth.get().getEmail());
 		try {
 			userService.transferToBank(userWithdraw);
 			RedirectView redirectView = new RedirectView();
@@ -218,37 +225,23 @@ public class UserController {
 		}
 	}
 
-//	@DeleteMapping("/user/{id}")
-//	public String deleteUser(@PathVariable("id") final Integer id) {
-//		userService.deleteUser(id);
-//		return "user " + id + " deleted";
-//	}
+	@GetMapping("/updateUser")
+	public ModelAndView getUpdateUser() {
+		String viewname = "updateUser";
+		Map<String, Object> model = new HashMap<String, Object>();
+		model.put("user", new UserUpdateDTO());
+		return new ModelAndView(viewname, model);
+	}
 
-//	@PutMapping("/user/{id}")
-//	public String updateUser(@PathVariable Integer id, @RequestBody User user) {
-//		userService.findUserById(id);
-//		return "user " + id + " deleted";
-//	}
-
-//	@GetMapping("/user/{id}")
-//	public Object getUserById(@PathVariable int id) {
-//		Optional<User> user = userService.findUserById(id);
-//		Set<String> list = userService.listAssociates(id);
-//		if (user.isPresent()) {
-//			return list;
-//		} else {
-//			return list;
-//		}
-//	}
-
-//	@GetMapping("/{username}")
-//	public User getUserByUsername(@PathVariable String username) {
-//		Optional<User> user = userService.findUserByUsername(username);
-//		if (user.isPresent()) {
-//			return user.get();
-//		} else {
-//			return null;
-//		}
-//	}
+	@PostMapping("/updateUser")
+	public ModelAndView updateUser(UserUpdateDTO userUpdateDTO, Principal principal) {
+		Optional<User> userUpdateOpt = userService.findUserByUsername(principal.getName());
+		User userUpdate = userUpdateOpt.get();
+		userUpdate.setPassword(userUpdateDTO.getPassword());
+		userService.updateUser(userUpdate);
+		RedirectView redirectView = new RedirectView();
+		redirectView.setUrl("/login");
+		return new ModelAndView(redirectView);
+	}
 
 }

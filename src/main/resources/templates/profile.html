@@ -38,31 +38,35 @@
 
 			</div>
 		</nav>
-		<form action="#" method="post" th:action="@{/profile}" th:object="${user}">
-			<h2 class="mt-4">Profile <span th:text="${thisuser.name}"> name</span></h2>
+			<h2 class="mt-4">Profile </h2>
 			<hr />
 			<!-- Form levels error messages here -->
-			<div class="form-group row ">
-				<div class="col-sm-8">
+			<div class="form-group row">
+				<div class="col-sm-8" th:if="${thisuser} != null">
 					<span>Name : </span>
 					<span th:text="${thisuser.name}"> name </span>
 				</div>
-				<div class="col-sm-8">
+				<div class="col-sm-8" th:if="${thisuser} != null">
 					<span>Username : </span>
 					<span th:text="${thisuser.username}"> username </span>
 				</div>
-				<div class="col-sm-8">
+				<div class="col-sm-8" th:if="${thisuser} != null">
 					<span>Account Balance : </span>
-					<span th:text="${#numbers.formatDecimal(thisuser.accountBalance, 0, 'COMMA', 2, 'POINT')}" > balance </span>
+					<span th:text="${#numbers.formatDecimal(thisuser.accountBalance, 0, 'COMMA', 2, 'POINT')}+'€'" > balance </span>
+				</div>
+				<div class="col-sm-8">
+				<a th:href="@{/updateUser}"><button class="btn btn-primary">Update password</button></a>
 				</div>
 			</div>
+			<form action="#" method="post" th:action="@{/profile}" th:object="${userDepositDTO}">
+
 			<div class="form-group row ">
 				<label for="deposit" class="col-sm-2 col-form-label">Deposit amount</label>
 				<div class="col-sm-4">
 					<input th:field="*{depositAmount}" type="text" class="form-control" placeholder="Mandatory">
 				</div>
 				<div class="col-sm-4">
-					<span class="text-danger"> </span>
+					<span class="text-danger" th:if="${#fields.hasErrors('depositAmount')}">Invalid amount </span>
 				</div>
 				<div class="form-group row">
 				<div class="col-sm-10">
@@ -71,11 +75,11 @@
 				</div>
 			</div>
 		</form>
-			<form action="#" method="post" th:action="@{/withdraw}" th:object="${user}">
+			<form action="#" method="post" th:action="@{/withdraw}" th:object="${userDepositDTO}">
 			<div class="form-group row ">
 				<label for="deposit" class="col-sm-2 col-form-label">Transfer to Bank</label>
 				<div class="col-sm-4">
-					<input th:field="*{depositAmount}" type="text" class="form-control" placeholder="Mandatory">
+					<input th:field="*{depositAmount}" type="number" class="form-control" placeholder="Mandatory">
 				</div>
 				<div class="col-sm-4">
 					<span class="text-danger" th:if="${error} != null"> [[${error}]]  </span>

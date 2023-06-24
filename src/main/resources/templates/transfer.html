@@ -66,7 +66,7 @@
 					</select>
 				</div>
 				<div class="col-sm-4">
-					<input th:field="*{transferAmount}" type="text" class="form-control" placeholder="Mandatory">
+					<input th:field="*{transferAmount}" type="number" class="form-control" placeholder="Amount">
 					<input th:field="*{description}" type="text" class="form-control" placeholder="Description">
 
 					<span class="text-danger" th:if="${error} != null"> [[${error}]] </span>

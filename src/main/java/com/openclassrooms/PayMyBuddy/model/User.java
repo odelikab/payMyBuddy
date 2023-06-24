@@ -7,8 +7,11 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
 import lombok.Getter;
@@ -33,15 +36,17 @@ public class User {
 	@NotBlank(message = "this field must not be empty")
 	private String password;
 	@NotBlank(message = "this field must not be empty")
+	@Email
 	@Column(unique = true, length = 50)
 	private String email;
 	private double accountBalance;
 
 	@ManyToMany // FetchType.LAZY by default
-	Set<User> associateTo;
+	@JoinTable(name = "user_connections", joinColumns = @JoinColumn(name = "userId"), inverseJoinColumns = @JoinColumn(name = "associateId"))
+	Set<User> associates;
 
 	public void addAssociate(User user) {
-		associateTo.add(user);
+		associates.add(user);
 	}
 
 }
